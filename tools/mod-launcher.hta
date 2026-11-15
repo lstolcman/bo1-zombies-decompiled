@@ -124,8 +124,26 @@ function args() {
     a += " +set fs_mods" + (el("zinfo").checked ? " zinfo" : "") + (el("noperks").checked ? " noperks +set noperks 1" : "");
   }
   if (!el("difficulty").disabled) a = nightmareFlags(el("difficulty").value, a, m[0]); // Normal = 0: unchanged
-  if (el("quickrestart").checked) a += " +set bo1_mod_quickrestart 1"; // R after game over: SP_QuickRestart
+  if (el("hitmarker").checked) a = addMod(a, "hitmarker", m[3] ? "mapkit" : ""); // mods/hitmarker: stacks after the others
+  if (el("unlimitedpap").checked) a = addMod(a, "unlimitedpap", m[3] ? "mapkit" : ""); // mods/unlimitedpap: repeatable Pack-a-Punch
+  if (el("spawnrate").checked) { // mods/spawnrate: spawnrate_mult times the retail spawn speed (last in fs_mods: it wraps horde's spawner)
+    a = addMod(a, "spawnrate", m[3] ? "mapkit" : "");
+    var sm = parseFloat(el("spawnmult").value); if (!(sm > 0)) sm = 3;
+    a += " +set spawnrate_mult " + sm;
+    if (!el("sprintbarrier").checked) a += " +set spawnrate_rush 0";
+  }
+  if (el("quickrestart").checked) a +=" +set bo1_mod_quickrestart 1"; // R after game over: SP_QuickRestart
   return a + " +devmap " + m[0];
+}
+
+// Adds a mod name to the end of the "+set fs_mods a b c" list in the argument string (the list runs to the next " +").
+// With no list yet, starts one ("first" goes in front when the base needs it, e.g. mapkit's own hooks).
+function addMod(a, mod, first) {
+  var i = a.indexOf("+set fs_mods ");
+  if (i < 0) return a + " +set fs_mods " + (first ? first + " " : "") + mod;
+  var j = a.indexOf(" +", i + 13);
+  if (j < 0) j = a.length;
+  return a.slice(0, j) + " " + mod + a.slice(j);
 }
 
 function play() {
@@ -169,6 +187,10 @@ function play() {
   <label><input type="checkbox" id="fps" onclick="refresh()"> FPS counter</label>
   <label><input type="checkbox" id="zinfo" onclick="refresh()"> Tab: zombie counter</label>
   <label><input type="checkbox" id="noperks" onclick="refresh()"> No perk machines <span class="note">with or without horde; Pack-a-Punch and the box stay</span></label>
+  <label><input type="checkbox" id="unlimitedpap" onclick="refresh()"> Unlimited Pack-a-Punch <span class="note">repack a weapon any number of times: price and damage double each time (reserve ammo does not yet)</span></label>
+  <label><input type="checkbox" id="hitmarker" onclick="refresh()"> Hit marker <span class="note">an X at the crosshair when you hit a zombie: white body, orange head, red kill</span></label>
+  <label><input type="checkbox" id="spawnrate" onclick="refresh()"> Faster zombie spawns <input class="n" id="spawnmult" value="3" onkeyup="refresh()"> times <span class="note">retail rules, only the spawn speed changes (list it after horde)</span></label>
+  <label><input type="checkbox" id="sprintbarrier" checked onclick="refresh()"> Zombies sprint to the barriers <span class="note">then back to the round's speed; with faster spawns</span></label>
   <label><input type="checkbox" id="quickrestart" checked onclick="refresh()"> R restarts after game over <span class="note">same map, same settings</span></label>
 </fieldset>
 <button onclick="play()">Play</button>
